@@ -1,0 +1,53 @@
+
+
+#-------Watermeter--------
+# maak een lus/verbinding tussen GPIO02 <=> GPIO04
+# dit is dan de overgang van binary naar puls counter
+# Sensor zelf zit op GPIO12
+#
+#  watermeter puls counter
+  - platform: pulse_counter
+    pin: GPIO04
+    id: watermeter_pulse
+    name: "Watermeter Pulse"
+    state_class: measurement
+    unit_of_measurement: "l/min"    
+    accuracy_decimals: 1
+    icon: "mdi:water-pump"
+    filters:
+      lambda: return x * 0.001 * 1000; #play with the numbers for m3
+
+#  Totaal watermeter   
+    total:
+      id: sensor_pulse_meter_total
+      name: "Watermeter Totaal"
+      unit_of_measurement: "m³"
+      state_class: total_increasing
+      device_class: water
+      accuracy_decimals: 3
+      filters:
+        lambda: return x * 0.001; #adjust to calc m3
+
+      
+
+# Watermeter Pulscount direct van sensor met flank detectie via 'onpress'
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO12
+      mode: INPUT_PULLUP
+    name: Pulse Sensor Water
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+    on_press:
+      then:
+        output.turn_on: gpio_02
+    on_release:
+      then:
+        output.turn_off: gpio_02
+output:
+  - platform: gpio
+    pin:
+      number: GPIO02
+    id: gpio_02
